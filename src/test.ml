@@ -40,7 +40,7 @@ let () =
     List.iteri (fun i s -> Printf.printf "%d: %s" i s) (Dump.dump_ast f)
     (* Interp.file f *)
   with
-    | LexerC.Lexing_error s ->
+    | Lexer.Lexing_error s ->
         report (lexeme_start_p lb, lexeme_end_p lb);
         eprintf "lexical error: %s@." s;
         exit 1
