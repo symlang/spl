@@ -26,9 +26,10 @@ let space = ' ' | '\t'
 let comment = "#" [^'\n']*
 
 rule next_tokens = parse
-  | '\n'    { new_line lexbuf; [NEWLINE] }
+  | '\n'    { new_line lexbuf; next_tokens lexbuf }
   | (space | comment)+
             { next_tokens lexbuf }
+  | "(*"    { comment_block lexbuf }
   | ident as id { [id_or_kwd id] }
   | '+'     { [PLUS] }
   | '-'     { [MINUS] }
@@ -55,6 +56,7 @@ rule next_tokens = parse
   | "}}"    { [RDB] }
   | ','     { [COMMA] }
   | ';'     { [SEMICOLON] }
+  | ";;"    { [DOUBLESEMICOLON] }
   | integer as s
             { try [CST (Cint (int_of_string s))]
               with _ -> raise (Lexing_error ("constant too large: " ^ s)) }
@@ -77,6 +79,10 @@ and string = parse
         string lexbuf }
   | eof
       { raise (Lexing_error "unterminated string") }
+and comment_block = parse
+  | "*)"    { next_tokens lexbuf }
+  | "\n"    { new_line lexbuf; comment_block lexbuf }
+  | _       { comment_block lexbuf }
 
 
 {

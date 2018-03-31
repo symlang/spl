@@ -37,8 +37,8 @@ let () =
     let f = Parser.file Lexer.next_token lb in
     close_in c;
     if !parse_only then exit 0;
-    List.iteri (fun i s -> Printf.printf "%d: %s" i s) (Dump.dump_ast f)
-    (* Interp.file f *)
+    Printf.printf "%a" Dump.dump_ast f;
+    Interp.file f
   with
     | Lexer.Lexing_error s ->
         report (lexeme_start_p lb, lexeme_end_p lb);
@@ -48,9 +48,9 @@ let () =
         report (lexeme_start_p lb, lexeme_end_p lb);
         eprintf "syntax error@.";
         exit 1
-    (* | Interp.Error s ->
+    | Interp.Error s ->
         eprintf "error: %s@." s;
-        exit 1 *)
+        exit 1
     | e ->
         eprintf "Anomaly: %s\n@." (Printexc.to_string e);
         exit 2

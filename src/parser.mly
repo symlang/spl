@@ -7,7 +7,7 @@ open Ast
 %token <string> IDENT
 %token EOF
 %token LP RP LSQ RSQ LB RB LDSQ RDSQ LDB RDB
-%token COMMA SEMICOLON NEWLINE
+%token COMMA SEMICOLON DOUBLESEMICOLON
 %token PLUS MINUS TIMES DIV MOD AND OR ASSIGN DELAY
 
 /* Priority definitions and associativity of tokens */
@@ -19,7 +19,7 @@ open Ast
 %left PLUS MINUS
 %left TIMES DIV MOD
 %nonassoc unary_minus
-%nonassoc LSQ
+%nonassoc LDSQ
 
 /* Point of entry of grammar */
 %start file
@@ -30,7 +30,7 @@ open Ast
 %%
 
 file:
-| NEWLINE? b = nonempty_list(stmt) EOF
+| b = nonempty_list(stmt) EOF
     { b }
 ;
 
@@ -56,14 +56,9 @@ expr:
 ;
 
 stmt:
-| s = simple_stmt NEWLINE
-    { s }
-;
-
-simple_stmt:
-| e = expr SEMICOLON
+| e = expr DOUBLESEMICOLON
     { Seval e }
-| e = expr
+| e = expr SEMICOLON
     { Sprint e }
 ;
 
