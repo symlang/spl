@@ -37,7 +37,6 @@ let () =
     let f = Parser.file Lexer.next_token lb in
     close_in c;
     if !parse_only then exit 0;
-    Printf.printf "%a" Dump.dump_ast f;
     Interp.file f
   with
     | Lexer.Lexing_error s ->
