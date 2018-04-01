@@ -4,9 +4,9 @@ open Parser
 let make_ch f = fun _ s -> f s
 
 let dump_obj oc = Format.fprintf oc "{ \"type\": \"%s\", \"value\": %a }"
-let rec dump_list oc sep d = function
-  | x::[] -> Format.fprintf oc "%a" d x
-  | x::((_::_) as xs) -> Format.fprintf oc "%a%s" d x sep; dump_list oc sep d xs
+let rec dump_list oc ~sep ~dump_func = function
+  | x::[] -> Format.fprintf oc "%a" dump_func x
+  | x::((_::_) as xs) -> Format.fprintf oc "%a%s" dump_func x sep; dump_list oc ~sep ~dump_func xs
   | _ -> ()
 
 type func_id = [`binop of binop|`unop of unop|`ident of string]
@@ -35,9 +35,9 @@ let func_id_to_string = function
   | `ident i -> i
 
 let rec dump_statement oc = function
-  | Sprint e -> dump_obj oc "stmt_print" dump_expr e; Format.fprintf oc "\n"
-  | Seval e -> dump_obj oc "stmt_eval" dump_expr e; Format.fprintf oc "\n"
-  | Sclear id -> dump_obj oc "stmt_clear" dump_ident id; Format.fprintf oc "\n"
+  | Sprint e -> dump_obj oc "stmt_print" dump_expr e;
+  | Seval e -> dump_obj oc "stmt_eval" dump_expr e;
+  | Sclear id -> dump_obj oc "stmt_clear" dump_ident id;
 and dump_expr oc = function
   | Ecst c -> dump_obj oc "expr_const" dump_const c
   | Eident id -> dump_obj oc "expr_ident" dump_ident id
@@ -54,10 +54,10 @@ and dump_const oc = function
   | Cstring s -> Format.fprintf oc "\"%s\"" (String.escaped s)
   | Cint i -> Format.fprintf oc "%d" i
 and dump_ident oc id = Format.fprintf oc "\"%s\"" (String.escaped id)
-and dump_expr_list oc l = Format.fprintf oc "[%a]" (fun oc -> dump_list oc ", " dump_expr) l
+and dump_expr_list oc l = Format.fprintf oc "[%a]" (dump_list ~sep:", " ~dump_func:dump_expr) l
 and dump_call oc ty n el =
   let n = String.escaped (func_id_to_string n) in
   Format.fprintf oc "{ \"type\": \"%s\", \"name\": \"%s\", \"args\": %a }" ty n dump_expr_list el
 
 let dump_ast oc f =
-  List.iter (dump_statement oc) f
+  Format.fprintf oc "[\n%a\n]" (dump_list ~sep:",\n" ~dump_func:dump_statement) f
