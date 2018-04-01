@@ -2,8 +2,17 @@ open Ast
 
 exception Error of string
 
+module Expr = struct
+  type pure = | IO | Throw
+  type prop = {
+    write_protect: bool;
+    pure: pure list;
+  }
+  type t = prop * Ast.expr
+end
+
 module Ctx = struct
-  type t = (Ast.ident, Ast.expr) Hashtbl.t
+  type t = (Expr.t, Expr.t) Hashtbl.t
   let create () = Hashtbl.create 17
   let push = Hashtbl.add
   let get t x =
@@ -13,8 +22,16 @@ module Ctx = struct
   let clear = Hashtbl.remove
 end
 
-let normalize_pass e = e
-and bind_pass ~ctx e = e
+let rec normalize_pass e = e
+and bind_pass ~ctx = function
+  | Ecst _ as e -> e
+  | Eident id -> Ctx.get ctx id
+  | Ebinop (op, e1, e2) -> Ebinop (op, bind_pass ~ctx e1, bind_pass ~ctx e2)
+  | Eunop (op, e1) -> Eunop (op, bind_pass ~ctx e1)
+  | Ecall (f, el) -> Ecall (bind_pass ~ctx f, List.map (bind_pass ~ctx) el)
+  | Elist el -> Elist (List.map (bind_pass ~ctx) el)
+  | Eblock el -> Eblock (List.map (bind_pass ~ctx) el)
+  | Eget (e1, e2) -> Eget (bind_pass ~ctx e1, bind_pass ~ctx e2)
 and dump_pass e = Format.asprintf "%a" Dump.dump_expr e
 and print_pass ~oc e = Format.fprintf oc "%a" Dump.dump_expr e; Some e
 
@@ -36,7 +53,7 @@ let deoptionalize l =
 
 let rec dump_list oc ~sep = function
   | x::[] -> Format.fprintf oc "%s" x
-  | x::((_::_) as xs) -> Format.fprintf oc "%s%s" x sep; dump_list oc ~sep xs
+  | x::xs -> Format.fprintf oc "%s%s" x sep; dump_list oc ~sep xs
   | _ -> ()
 
 let file ?(oc=Format.std_formatter) ?(ctx = Ctx.create ()) f = List.(

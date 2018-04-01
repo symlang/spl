@@ -20,7 +20,7 @@ open Ast
 %left PLUS MINUS
 %left TIMES DIV MOD
 %nonassoc unary_minus
-%nonassoc LDSQ
+%nonassoc LDSQ LSQ
 
 /* Point of entry of grammar */
 %start file
@@ -46,7 +46,7 @@ expr:
     { Eunop (Uneg, e1) }
 | e1 = expr o = binop e2 = expr
     { Ebinop (o, e1, e2) }
-| f = ident LSQ e = separated_list(COMMA, expr) RSQ
+| f = expr LSQ e = separated_list(COMMA, expr) RSQ
     { Ecall (f, e) }
 | LB l = separated_list(COMMA, expr) RB
     { Elist l }

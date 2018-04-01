@@ -23,7 +23,7 @@ type expr =
   | Eident of ident
   | Ebinop of binop * expr * expr
   | Eunop of unop * expr
-  | Ecall of ident * expr list
+  | Ecall of expr * expr list
   | Elist of expr list
   | Eblock of expr list
   | Eget of expr * expr (* e1[e2] *)
