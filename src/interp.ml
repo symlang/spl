@@ -10,5 +10,6 @@ let rec stmt s =
   match s with
   | Sprint e -> Some (expr e)
   | Seval e -> ignore (expr e); None
+  | Sclear id -> None
 
 let file f = List.map stmt f |> ignore

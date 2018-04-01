@@ -37,6 +37,7 @@ let func_id_to_string = function
 let rec dump_statement oc = function
   | Sprint e -> dump_obj oc "stmt_print" dump_expr e; Printf.fprintf oc "\n"
   | Seval e -> dump_obj oc "stmt_eval" dump_expr e; Printf.fprintf oc "\n"
+  | Sclear id -> dump_obj oc "stmt_clear" dump_ident id; Printf.fprintf oc "\n"
 and dump_expr oc = function
   | Ecst c -> dump_obj oc "expr_const" dump_const c
   | Eident id -> dump_obj oc "expr_ident" dump_ident id

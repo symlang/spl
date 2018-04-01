@@ -31,6 +31,7 @@ type expr =
 and stmt =
   | Sprint of expr
   | Seval of expr
+  | Sclear of ident
 
 and def = ident * ident list * stmt
 

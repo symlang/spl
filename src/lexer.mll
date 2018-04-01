@@ -38,6 +38,7 @@ rule next_tokens = parse
   | '%'     { [MOD] }
   | '='     { [ASSIGN] }
   | ":="    { [DELAY] }
+  | "=."    { [CLEAR] }
   | "=="    { [CMP Beq] }
   | "!="    { [CMP Bneq] }
   | "<"     { [CMP Blt] }

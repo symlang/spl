@@ -8,7 +8,8 @@ open Ast
 %token EOF
 %token LP RP LSQ RSQ LB RB LDSQ RDSQ LDB RDB
 %token COMMA SEMICOLON DOUBLESEMICOLON
-%token PLUS MINUS TIMES DIV MOD AND OR ASSIGN DELAY
+%token PLUS MINUS TIMES DIV MOD AND OR
+%token ASSIGN DELAY CLEAR
 
 /* Priority definitions and associativity of tokens */
 
@@ -60,6 +61,8 @@ stmt:
     { Seval e }
 | e = expr SEMICOLON
     { Sprint e }
+| id = ident CLEAR
+    { Sclear id }
 ;
 
 %inline binop:
