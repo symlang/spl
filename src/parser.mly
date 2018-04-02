@@ -1,11 +1,10 @@
 %{
 open Ast
-let prefix_call (op, e) = Ecall (Esymbol (Cprefix op), [e])
-let binop_call (op, e1, e2) = Ecall (Esymbol (Cbinop op), [e1; e2])
+open Operator
 %}
 
 %token <Ast.constant> CST
-%token <Ast.binop> BINOP
+%token <string> OPSYM
 %token <string> IDENT
 %token EOF
 %token LP RP LSQ RSQ LB RB LDSQ RDSQ LDB RDB
@@ -29,7 +28,7 @@ file:
 
 expr:
   l = nonempty_list(expr_factor)
-    { EV l }
+    { parse_expr_virtual_list l }
 
 expr_item:
 | c = CST
@@ -49,8 +48,8 @@ expr_item:
 ;
 
 expr_factor:
-| e = expr_item  { e }
-| o = binop      { Esymbol o }
+| e = expr_item  { EVexpr e }
+| o = OPSYM      { EVsymbol o }
 
 stmt:
 | e = expr DOUBLESEMICOLON
@@ -59,10 +58,6 @@ stmt:
     { Sprint e }
 | id = ident CLEAR
     { Sclear id }
-;
-
-%inline binop:
-| b = BINOP   { (Cbinop b) }
 ;
 
 ident:

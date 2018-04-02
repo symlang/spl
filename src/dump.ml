@@ -10,25 +10,26 @@ let rec dump_list oc ~sep ~dump_func = function
   | _ -> ()
 
 let preop_to_string = function
-  | Uneg -> "Neg"
+  | Uneg -> "Minus"
+  | Uadd -> "Plus"
 and sufop_to_string = function
-  | Uoutput -> "Output"
+  | Uclear -> "Unset"
 and binop_to_string = function
-  | Badd -> "Add"
-  | Bsub -> "Sub"
-  | Bmul -> "Mul"
-  | Bdiv -> "Div"
+  | Badd -> "Plus"
+  | Bsub -> "Subtract"
+  | Bmul -> "Times"
+  | Bdiv -> "Divide"
   | Bmod -> "Mod"
   | Beq -> "Equal"
   | Bneq -> "NotEqual"
-  | Blt -> "LessThan"
+  | Blt -> "Less"
   | Ble -> "LessEqual"
-  | Bgt -> "GreatThan"
-  | Bge -> "GreatEqual"
+  | Bgt -> "Greater"
+  | Bge -> "GreaterEqual"
   | Band -> "And"
   | Bor -> "Or"
-  | Bassign -> "Assign"
-  | Bdelay -> "Delay"
+  | Bassign -> "Set"
+  | Bdelay -> "SetDelayed"
 
 let rec dump_statement oc = function
   | Sprint e -> dump_obj oc "stmt_print" dump_expr e;
@@ -41,7 +42,6 @@ and dump_expr oc = function
   | Elist el -> dump_obj oc "expr_list" dump_expr_list el
   | Eget (e1, e2) -> dump_obj oc "expr_get" dump_expr_list [e1; e2]
   | Eblock l -> dump_obj oc "expr_block" dump_expr_list l
-  | EV l -> dump_obj oc "expr_virtual_list" dump_expr_list l
 and dump_const oc = function
   | Cnone -> Format.fprintf oc "null"
   | Cbool true -> Format.fprintf oc "true"

@@ -24,6 +24,9 @@ let ident = letter (letter | digit | '_')*
 let integer = ['0'-'9']+
 let space = ' ' | '\t'
 let comment = "#" [^'\n']*
+let symbols = ('+' | '-' | '*' | '/' | '%'
+  | "==" | "!=" | "<" | "<=" | ">" | ">="
+  | '=' | ":=" | "=.")
 
 rule next_tokens = parse
   | '\n'    { new_line lexbuf; next_tokens lexbuf }
@@ -31,20 +34,8 @@ rule next_tokens = parse
             { next_tokens lexbuf }
   | "(*"    { comment_block lexbuf }
   | ident as id { [id_or_kwd id] }
-  | '+'     { [BINOP Badd] }
-  | '-'     { [BINOP Bsub] }
-  | '*'     { [BINOP Bmul] }
-  | '/'     { [BINOP Bdiv] }
-  | '%'     { [BINOP Bmod] }
-  | "=="    { [BINOP Beq] }
-  | "!="    { [BINOP Bneq] }
-  | "<"     { [BINOP Blt] }
-  | "<="    { [BINOP Ble] }
-  | ">"     { [BINOP Bgt] }
-  | ">="    { [BINOP Bge] }
-  | '='     { [BINOP Bassign] }
-  | ":="    { [BINOP Bdelay] }
-  | "=."    { [CLEAR] }
+  | symbols as s
+            { [OPSYM s] }
   | '('     { [LP] }
   | ')'     { [RP] }
   | '['     { [LSQ] }

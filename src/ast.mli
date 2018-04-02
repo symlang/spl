@@ -4,9 +4,9 @@
 type ident = string
 
 type preop =
-  | Uneg (* -e *)
+  | Uneg | Uadd
 
-type sufop = | Uoutput
+type postop = | Uclear
 
 type binop =
   | Badd | Bsub | Bmul | Bdiv | Bmod    (* + - * / % *)
@@ -24,7 +24,7 @@ type symbol =
   | Cident of ident
   | Cbinop of binop
   | Cprefix of preop
-  | Csuffix of sufop
+  | Csuffix of postop
 
 type expr =
   | Ecst of constant
@@ -33,7 +33,10 @@ type expr =
   | Elist of expr list
   | Eblock of expr list
   | Eget of expr * expr (* e1[e2] *)
-  | EV of expr list
+
+type vexpr =
+  | EVexpr of expr
+  | EVsymbol of string
 
 and stmt =
   | Sprint of expr
