@@ -3,8 +3,10 @@
 
 type ident = string
 
-type unop =
+type preop =
   | Uneg (* -e *)
+
+type sufop = | Uoutput
 
 type binop =
   | Badd | Bsub | Bmul | Bdiv | Bmod    (* + - * / % *)
@@ -18,11 +20,15 @@ type constant =
   | Cstring of string
   | Cint of int
 
+type symbol =
+  | Cident of ident
+  | Cbinop of binop
+  | Cprefix of preop
+  | Csuffix of sufop
+
 type expr =
   | Ecst of constant
-  | Eident of ident
-  | Ebinop of binop * expr * expr
-  | Eunop of unop * expr
+  | Esymbol of symbol
   | Ecall of expr * expr list
   | Elist of expr list
   | Eblock of expr list

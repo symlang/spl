@@ -1,5 +1,7 @@
 %{
 open Ast
+let prefix_call (op, e) = Ecall (Esymbol (Cprefix op), [e])
+let binop_call (op, e1, e2) = Ecall (Esymbol (Cbinop op), [e1; e2])
 %}
 
 %token <Ast.constant> CST
@@ -39,13 +41,13 @@ expr:
 | c = CST
     { Ecst c }
 | id = ident
-    { Eident id }
+    { Esymbol (Cident id) }
 | e1 = expr LDSQ e2 = expr RDSQ
     { Eget (e1, e2) }
 | MINUS e1 = expr %prec unary_minus
-    { Eunop (Uneg, e1) }
+    { prefix_call (Uneg, e1) }
 | e1 = expr o = binop e2 = expr
-    { Ebinop (o, e1, e2) }
+    { binop_call (o, e1, e2) }
 | f = expr LSQ e = separated_list(COMMA, expr) RSQ
     { Ecall (f, e) }
 | LB l = separated_list(COMMA, expr) RB

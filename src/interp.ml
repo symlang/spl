@@ -12,22 +12,20 @@ module Expr = struct
 end
 
 module Ctx = struct
-  type t = (Expr.t, Expr.t) Hashtbl.t
-  let create () = Hashtbl.create 17
+  type t = (Ast.expr, Ast.expr) Hashtbl.t
+  let create (): t = Hashtbl.create 17
   let push = Hashtbl.add
   let get t x =
     match Hashtbl.find_opt t x with
     | Some v -> v
-    | None -> Eident x
+    | None -> x
   let clear = Hashtbl.remove
 end
 
 let rec normalize_pass e = e
 and bind_pass ~ctx = function
   | Ecst _ as e -> e
-  | Eident id -> Ctx.get ctx id
-  | Ebinop (op, e1, e2) -> Ebinop (op, bind_pass ~ctx e1, bind_pass ~ctx e2)
-  | Eunop (op, e1) -> Eunop (op, bind_pass ~ctx e1)
+  | Esymbol _ as id -> Ctx.get ctx id
   | Ecall (f, el) -> Ecall (bind_pass ~ctx f, List.map (bind_pass ~ctx) el)
   | Elist el -> Elist (List.map (bind_pass ~ctx) el)
   | Eblock el -> Eblock (List.map (bind_pass ~ctx) el)
