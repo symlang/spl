@@ -31,20 +31,20 @@ rule next_tokens = parse
             { next_tokens lexbuf }
   | "(*"    { comment_block lexbuf }
   | ident as id { [id_or_kwd id] }
-  | '+'     { [PLUS] }
-  | '-'     { [MINUS] }
-  | '*'     { [TIMES] }
-  | '/'     { [DIV] }
-  | '%'     { [MOD] }
-  | '='     { [ASSIGN] }
-  | ":="    { [DELAY] }
+  | '+'     { [BINOP Badd] }
+  | '-'     { [BINOP Bsub] }
+  | '*'     { [BINOP Bmul] }
+  | '/'     { [BINOP Bdiv] }
+  | '%'     { [BINOP Bmod] }
+  | "=="    { [BINOP Beq] }
+  | "!="    { [BINOP Bneq] }
+  | "<"     { [BINOP Blt] }
+  | "<="    { [BINOP Ble] }
+  | ">"     { [BINOP Bgt] }
+  | ">="    { [BINOP Bge] }
+  | '='     { [BINOP Bassign] }
+  | ":="    { [BINOP Bdelay] }
   | "=."    { [CLEAR] }
-  | "=="    { [CMP Beq] }
-  | "!="    { [CMP Bneq] }
-  | "<"     { [CMP Blt] }
-  | "<="    { [CMP Ble] }
-  | ">"     { [CMP Bgt] }
-  | ">="    { [CMP Bge] }
   | '('     { [LP] }
   | ')'     { [RP] }
   | '['     { [LSQ] }

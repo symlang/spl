@@ -33,6 +33,7 @@ type expr =
   | Elist of expr list
   | Eblock of expr list
   | Eget of expr * expr (* e1[e2] *)
+  | EV of expr list
 
 and stmt =
   | Sprint of expr

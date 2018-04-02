@@ -41,6 +41,7 @@ and dump_expr oc = function
   | Elist el -> dump_obj oc "expr_list" dump_expr_list el
   | Eget (e1, e2) -> dump_obj oc "expr_get" dump_expr_list [e1; e2]
   | Eblock l -> dump_obj oc "expr_block" dump_expr_list l
+  | EV l -> dump_obj oc "expr_virtual_list" dump_expr_list l
 and dump_const oc = function
   | Cnone -> Format.fprintf oc "null"
   | Cbool true -> Format.fprintf oc "true"

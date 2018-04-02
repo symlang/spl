@@ -5,24 +5,14 @@ let binop_call (op, e1, e2) = Ecall (Esymbol (Cbinop op), [e1; e2])
 %}
 
 %token <Ast.constant> CST
-%token <Ast.binop> CMP
+%token <Ast.binop> BINOP
 %token <string> IDENT
 %token EOF
 %token LP RP LSQ RSQ LB RB LDSQ RDSQ LDB RDB
 %token COMMA SEMICOLON DOUBLESEMICOLON
-%token PLUS MINUS TIMES DIV MOD AND OR
-%token ASSIGN DELAY CLEAR
+%token CLEAR
 
 /* Priority definitions and associativity of tokens */
-
-%right ASSIGN DELAY
-%left OR
-%left AND
-%nonassoc CMP
-%left PLUS MINUS
-%left TIMES DIV MOD
-%nonassoc unary_minus
-%nonassoc LDSQ LSQ
 
 /* Point of entry of grammar */
 %start file
@@ -38,17 +28,17 @@ file:
 ;
 
 expr:
+  l = nonempty_list(expr_factor)
+    { EV l }
+
+expr_item:
 | c = CST
     { Ecst c }
 | id = ident
     { Esymbol (Cident id) }
-| e1 = expr LDSQ e2 = expr RDSQ
+| e1 = expr_item LDSQ e2 = expr RDSQ
     { Eget (e1, e2) }
-| MINUS e1 = expr %prec unary_minus
-    { prefix_call (Uneg, e1) }
-| e1 = expr o = binop e2 = expr
-    { binop_call (o, e1, e2) }
-| f = expr LSQ e = separated_list(COMMA, expr) RSQ
+| f = expr_item LSQ e = separated_list(COMMA, expr) RSQ
     { Ecall (f, e) }
 | LB l = separated_list(COMMA, expr) RB
     { Elist l }
@@ -57,6 +47,10 @@ expr:
 | LP e = expr RP
     { e }
 ;
+
+expr_factor:
+| e = expr_item  { e }
+| o = binop      { Esymbol o }
 
 stmt:
 | e = expr DOUBLESEMICOLON
@@ -68,16 +62,7 @@ stmt:
 ;
 
 %inline binop:
-| PLUS   { Badd }
-| MINUS  { Bsub }
-| TIMES  { Bmul }
-| DIV    { Bdiv }
-| MOD    { Bmod }
-| c=CMP  { c    }
-| AND    { Band }
-| OR     { Bor  }
-| ASSIGN { Bassign }
-| DELAY  { Bdelay  }
+| b = BINOP   { (Cbinop b) }
 ;
 
 ident:
