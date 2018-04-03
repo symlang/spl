@@ -13,12 +13,5 @@ Library parser
   Modules:        Parser
   Path:           src/
   BuildTools:     ocamlbuild
-  BuildDepends:   lexer
-  CompiledObject: best
-  Install:        false
-Library lexer
-  Modules:        Lexer
-  Path:           src/
-  BuildTools:     ocamlbuild
   CompiledObject: best
   Install:        false
