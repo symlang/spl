@@ -9,28 +9,6 @@ let rec dump_list oc ~sep ~dump_func = function
   | x::((_::_) as xs) -> Format.fprintf oc "%a%s" dump_func x sep; dump_list oc ~sep ~dump_func xs
   | _ -> ()
 
-let preop_to_string = function
-  | Uneg -> "Minus"
-  | Uadd -> "Plus"
-and sufop_to_string = function
-  | Uclear -> "Unset"
-and binop_to_string = function
-  | Badd -> "Plus"
-  | Bsub -> "Subtract"
-  | Bmul -> "Times"
-  | Bdiv -> "Divide"
-  | Bmod -> "Mod"
-  | Beq -> "Equal"
-  | Bneq -> "NotEqual"
-  | Blt -> "Less"
-  | Ble -> "LessEqual"
-  | Bgt -> "Greater"
-  | Bge -> "GreaterEqual"
-  | Band -> "And"
-  | Bor -> "Or"
-  | Bassign -> "Set"
-  | Bdelay -> "SetDelayed"
-
 let rec dump_statement oc = function
   | Sprint e -> dump_obj oc "stmt_print" dump_expr e;
   | Seval e -> dump_obj oc "stmt_eval" dump_expr e;
@@ -49,9 +27,6 @@ and dump_const oc = function
   | Cstring s -> Format.fprintf oc "\"%s\"" (String.escaped s)
   | Cint i -> Format.fprintf oc "%d" i
 and dump_symbol oc = function
-  | Cbinop op -> dump_ident oc (binop_to_string op)
-  | Cprefix op -> dump_ident oc (preop_to_string op)
-  | Csuffix op -> dump_ident oc (sufop_to_string op)
   | Cident id -> Format.fprintf oc "%a" dump_ident id
 and dump_ident oc id = Format.fprintf oc "\"%s\"" (String.escaped id)
 and dump_expr_list oc l = Format.fprintf oc "[%a]" (dump_list ~sep:", " ~dump_func:dump_expr) l

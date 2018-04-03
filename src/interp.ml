@@ -30,7 +30,6 @@ and bind_pass ~ctx = function
   | Elist el -> Elist (List.map (bind_pass ~ctx) el)
   | Eblock el -> Eblock (List.map (bind_pass ~ctx) el)
   | Eget (e1, e2) -> Eget (bind_pass ~ctx e1, bind_pass ~ctx e2)
-  | e -> e (* TODO: fix this *)
 and dump_pass e = Format.asprintf "%a" Dump.dump_expr e
 and print_pass ~oc e = Format.fprintf oc "%a" Dump.dump_expr e; Some e
 
