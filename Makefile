@@ -13,6 +13,7 @@ test.nb: build.timestamp test.m
 	./test.exe test.m > test.nb
 
 clean:
+	jbuilder clean
 	rm -f build.timestamp test.exe
 
 .PHONY: build all clean

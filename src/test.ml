@@ -29,19 +29,19 @@ let report e =
 
 let () =
   let c = open_in file in
-  let lb = create_lexbuf ~file (Sedlexing.Utf8.from_channel c) in
+  let lb = Sedlexing.Utf8.from_channel c in
   try
-    let f = sedlex_with_menhir Lexer.token Parser.file lb in
+    let f = sedlex_with_menhir ~file Parser.file Lexer.token lb in
     close_in c;
     if !parse_only then exit 0;
     Interp.file f
   with
     | Sedlexing_menhir.ParseError e ->
-        report (position_info lb);
+        report (current_position lb);
         eprintf "Parse error@.";
         exit 1
     | Lexer.Error s ->
-        report (position_info lb);
+        report (current_position lb);
         eprintf "lexical error: %s@." s;
         exit 1
     | Interp.Error s ->

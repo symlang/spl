@@ -12,4 +12,4 @@
 (executable
  ((name test)
   (modules_without_implementation (ast))
-  (libraries (sedlex menhirLib))))
+  (libraries (sedlex sedlex.menhir menhirLib))))
