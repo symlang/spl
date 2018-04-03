@@ -58,7 +58,7 @@ and parse_string lexbuf =
   let lexeme = Sedlexing.Utf8.lexeme in
   match%sedlex lexbuf with
   | '"'    -> let s = Buffer.contents string_buffer in
-      Buffer.reset string_buffer; s
+              Buffer.reset string_buffer; s
   | "\\n"  -> Buffer.add_char string_buffer '\n'; parse_string lexbuf
   | "\\\"" ->  Buffer.add_char string_buffer '"'; parse_string lexbuf
   | eof    -> raise (Error "unterminated string")

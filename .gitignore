@@ -13,7 +13,6 @@
 *.timestamp
 
 parser.ml
-lexer.ml
 
 _build
 bin

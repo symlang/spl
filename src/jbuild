@@ -4,12 +4,8 @@
  ((flags (--explain -v))
   (modules (parser))))
 
-(rule
- ((targets (lexer.ml))
-  (deps    (lexer.sedlex.ml))
-  (action  (run ${lib:sedlex:ppx_sedlex} ${<} -o ${@}))))
-
 (executable
  ((name test)
   (modules_without_implementation (ast))
-  (libraries (sedlex sedlex.menhir menhirLib))))
+  (libraries (sedlex sedlex.menhir menhirLib))
+  (preprocess (pps (sedlex.ppx)))))
