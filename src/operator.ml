@@ -5,9 +5,9 @@ exception Parsing_error of string
 
 type preop =
   | Unoop
-  | Uneg | Uadd
+  | Uneg | Uadd | UpreInc | UpreDec
 
-type postop = | Uendop | Uclear
+type postop = | Uendop | Uclear | UpostInc | UpostDec
 
 type binop =
   | Badd | Bsub | Bmul | Bdiv | Bmod    (* + - * / % *)
@@ -27,17 +27,19 @@ type vexpr =
 
 (* TODO: association of the same precedence should be the same *)
 let ops = [
-  `preop Unoop, "\\[noop]", "", (0, Gnone);
-  `preop Uneg, "-", "Minus", (480, Gright); (* BFlistable, BFnumericFunction *)
-  `preop Uadd, "+", "Plus", (480, Gflat); (* Gflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
-  (* "++", "PreIncrement", 660, BFholdFirst, BFreadProtected *)
-  (* "--", "PreDecrement", 660, BFholdFirst, BFreadProtected *)
+  `preop Unoop, "\\[noop]", "", (0, Gnonassoc);
+  `preop Uneg, "-", "Minus", (480, Gnone); (* BFlistable, BFnumericFunction *)
+  `preop Uadd, "+", "Plus1", (480, Gflat); (* Gflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
+  `preop UpreInc, "++", "PreIncrement", (660, Gnone); (* BFholdFirst, BFreadProtected *)
+  `preop UpreDec, "--", "PreDecrement", (660, Gnone); (* BFholdFirst, BFreadProtected *)
   (* "<<", "Get", 720, Gnone, BFprotected *)
   (* "!", "Not", 230 *)
 
-  `postop Uendop, "\\[endop]", "", (1, Gnone);
-  `postop Uclear, "=.", "Unset", (670, Gnone); (* BFholdFirst, BFlistable, FBreadProtected *)
+  `postop Uendop, "\\[endop]", "", (1, Gnonassoc);
+  `postop Uclear, "=.", "Unset", (670, Gnonassoc); (* BFholdFirst, BFlistable, FBreadProtected *)
   (* "&", "Function", 90, BFholdAll *)
+  `postop UpostInc, "++", "Increment", (660, Gnone); (* BFholdFirst, BFreadProtected *)
+  `postop UpostDec, "--", "Decrement", (660, Gnone); (* BFholdFirst, BFreadProtected *)
   (* "++", Increment, 660, BFholdFirst, BFreadProtected *)
   (* "--", Decrement, 660, BFholdFirst, BFreadProtected *)
   (* "!", Factorial, 610 *)
@@ -137,7 +139,7 @@ let binop_of_string = op_of_string [binop_table]
 let someop_of_string = op_of_string [postop_table; binop_table; preop_table]
 
 let rec dump_vexpr_list oc =
-  Format.fprintf oc "[%a]" (dump_list ~sep:", " ~dump_func:dump_vexpr)
+  Format.fprintf oc "[%a]" (dump_alist ~sep:", " ~dump_func:dump_vexpr)
 and dump_vexpr oc = function
   | EVexpr _ -> Format.fprintf oc "$"
   | EVop op -> Format.fprintf oc "%a" dump_op op
@@ -174,7 +176,7 @@ let parse_expr_virtual_list el =
     | (EVop (o, n, (prec, assoc))) as op::xs ->
         begin match (o, comp prec cur_prec, assoc) with
           | (`binop _, Gt, _) -> run cur_prec (op::stack) xs
-          | (`binop _, Eq, Gflat) | (`binop _, Eq, Gleft)
+          | (`binop _, Eq, Gflat) | (`binop _, Eq, Gleft) | (`binop _, Eq, Gnone)
           | (`binop _, Lt, _) -> run prec (op::run_stack prec stack) xs
           | (`postop _, _, _) -> run prec (run_post n prec stack) xs
           | (`preop _, _, _) -> run prec (op::stack) xs
@@ -189,7 +191,7 @@ let parse_expr_virtual_list el =
           | (`preop _, Gt) -> run_stack new_prec (call n [e]::xs)
           | _ -> assert false
         end
-    | (EVexpr e1)::(EVop (o, n, (prec, assoc)))::(EVexpr e2)::xs as stack ->
+    | (EVexpr e2)::(EVop (o, n, (prec, assoc)))::(EVexpr e1)::xs as stack ->
         begin match (o, comp prec new_prec) with
           | (_, Lt) -> stack
           | (`binop _, Gt) -> run_stack new_prec (call n [e1;e2]::xs)

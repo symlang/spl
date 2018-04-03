@@ -26,7 +26,7 @@ let space = ' ' | '\t'
 let comment = "#" [^'\n']*
 let symbols = ('+' | '-' | '*' | '/' | '%'
   | "==" | "!=" | "<" | "<=" | ">" | ">="
-  | '=' | ":=" | "=.")
+  | '=' | ":=" | "=." | "++" | "--")
 
 rule next_tokens = parse
   | '\n'    { new_line lexbuf; next_tokens lexbuf }
