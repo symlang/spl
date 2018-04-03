@@ -1,4 +1,5 @@
 open Ast
+open Utils
 
 exception Parsing_error of string
 
@@ -15,7 +16,8 @@ type binop =
   | Bassign | Bdelay                    (* = := *)
 
 type someop = [ `binop of binop | `preop of preop | `postop of postop ]
-type association = BFleft | BFright | BFnonassoc | BFflat | BFinequality | BFnone
+(* TODO: what's difference between Gnonassoc and Gnone *)
+type association = Gleft | Gright | Gnonassoc | Gflat | Ginequality | Gnone
 type precedence = (int * association)
 
 type vexpr =
@@ -25,16 +27,16 @@ type vexpr =
 
 (* TODO: association of the same precedence should be the same *)
 let ops = [
-  `preop Unoop, "\\[noop]", "", (0, BFnone);
-  `preop Uneg, "-", "Minus", (480, BFright); (* BFlistable, BFnumericFunction *)
-  `preop Uadd, "+", "Plus", (480, BFflat); (* BFflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
+  `preop Unoop, "\\[noop]", "", (0, Gnone);
+  `preop Uneg, "-", "Minus", (480, Gright); (* BFlistable, BFnumericFunction *)
+  `preop Uadd, "+", "Plus", (480, Gflat); (* Gflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
   (* "++", "PreIncrement", 660, BFholdFirst, BFreadProtected *)
   (* "--", "PreDecrement", 660, BFholdFirst, BFreadProtected *)
-  (* "<<", "Get", 720, BFnone, BFprotected *)
+  (* "<<", "Get", 720, Gnone, BFprotected *)
   (* "!", "Not", 230 *)
 
-  `postop Uendop, "\\[endop]", "", (1, BFnone);
-  `postop Uclear, "=.", "Unset", (670, BFnone); (* BFholdFirst, BFlistable, FBreadProtected *)
+  `postop Uendop, "\\[endop]", "", (1, Gnone);
+  `postop Uclear, "=.", "Unset", (670, Gnone); (* BFholdFirst, BFlistable, FBreadProtected *)
   (* "&", "Function", 90, BFholdAll *)
   (* "++", Increment, 660, BFholdFirst, BFreadProtected *)
   (* "--", Decrement, 660, BFholdFirst, BFreadProtected *)
@@ -42,57 +44,57 @@ let ops = [
   (* "..", Repeated, 170 *)
   (* "'", "Derivative", 670, BFnHoldAll *)
 
-  `binop Badd, "+", "Plus", (310, BFflat); (* BFflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
-  `binop Bsub, "-", "Subtract", (310, BFleft); (* BFleft, BFlistable, BFnumericFunction *)
-  `binop Bmul, "*", "Times", (400, BFflat); (* BFflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
-  `binop Bdiv, "/", "Divide", (470, BFleft); (* BFleft, BFlistable, BFnumericFunction *)
+  `binop Badd, "+", "Plus", (310, Gflat); (* Gflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
+  `binop Bsub, "-", "Subtract", (310, Gleft); (* Gleft, BFlistable, BFnumericFunction *)
+  `binop Bmul, "*", "Times", (400, Gflat); (* Gflat, BFlistable, BFnumericFunction, BFoneIdentity, BForderless, BFprotected *)
+  `binop Bdiv, "/", "Divide", (470, Gleft); (* Gleft, BFlistable, BFnumericFunction *)
   (* "^", "Power", 590, BFlistable, BFnumericFunction, BFoneIdentity *)
   (* `binop Bdiv, "%", "Mod", 470; *)
-  (* ".", "Dot", 490, BFflat, BFoneIdentity *)
+  (* ".", "Dot", 490, Gflat, BFoneIdentity *)
 
   (* TODO: inequalty is somehow flattened *)
-  `binop Beq, "==", "Equal", (290, BFinequality); (* BFNonAssociative *)
-  `binop Bneq, "!=", "Unequal", (290, BFinequality); (* BFNonAssociative *)
-  `binop Blt, "<", "Less", (290, BFinequality); (* BFNonAssociative *)
-  `binop Ble, "<=", "LessEqual", (290, BFinequality); (* BFNonAssociative *)
-  `binop Bgt, ">", "Greater", (290, BFinequality); (* BFNonAssociative *)
-  `binop Bge, ">=", "GreaterEqual", (290, BFinequality); (* BFNonAssociative *)
+  `binop Beq, "==", "Equal", (290, Ginequality); (* Gnonassociative *)
+  `binop Bneq, "!=", "Unequal", (290, Ginequality); (* Gnonassociative *)
+  `binop Blt, "<", "Less", (290, Ginequality); (* Gnonassociative *)
+  `binop Ble, "<=", "LessEqual", (290, Ginequality); (* Gnonassociative *)
+  `binop Bgt, ">", "Greater", (290, Ginequality); (* Gnonassociative *)
+  `binop Bge, ">=", "GreaterEqual", (290, Ginequality); (* Gnonassociative *)
   (* "===", "SameQ", 290 *)
   (* "=!=", "UnsameQ", 290 *)
-  `binop Band, "&&", "And", (215, BFflat); (* BFflat, BFholdAll, BFoneIdentity *)
-  `binop Bor, "||", "Or", (215, BFflat); (* BFflat, BFholdAll, BFoneIdentity *)
-  (* u22BB, "Xor", 215, BFflat, BFholdAll, BFoneIdentity *)
+  `binop Band, "&&", "And", (215, Gflat); (* Gflat, BFholdAll, BFoneIdentity *)
+  `binop Bor, "||", "Or", (215, Gflat); (* Gflat, BFholdAll, BFoneIdentity *)
+  (* u22BB, "Xor", 215, Gflat, BFholdAll, BFoneIdentity *)
 
-  `binop Bassign, "=", "Set", (40, BFright); (* BFright, BFholdFirst, BFsequenceHold *)
-  `binop Bdelay, ":=", "SetDelayed", (40, BFright);
+  `binop Bassign, "=", "Set", (40, Gright); (* Gright, BFholdFirst, BFsequenceHold *)
+  `binop Bdelay, ":=", "SetDelayed", (40, Gright);
   (* "^=", "UpSet", 40, BFholdFirst, BFsequenceHold *)
-  (* "+=", "AddTo", 100, BFright, BFholdFirst *)
-  (* "-=", "SubtractFrom", 100, BFright, BFholdFirst *)
-  (* "*=", "TimesBy", 100, BFright, BFholdFirst *)
-  (* "/=", "DevideBy", 100, BFright, BFholdFirst *)
+  (* "+=", "AddTo", 100, Gright, BFholdFirst *)
+  (* "-=", "SubtractFrom", 100, Gright, BFholdFirst *)
+  (* "*=", "TimesBy", 100, Gright, BFholdFirst *)
+  (* "/=", "DevideBy", 100, Gright, BFholdFirst *)
 
-  (* "->", "Rule", 120, BFright, BFsequenceHold *)
-  (* ":>", "RuleDelayed", 120, BFright, BFsequenceHold, BFholdRest *)
-  (* "/.", "ReplaceAll", 110, BFleft *)
-  (* "//.", "ReplaceRepeated", 110, BFleft *)
-  (* "?", "PatternTest", BFnone, 680 *)
+  (* "->", "Rule", 120, Gright, BFsequenceHold *)
+  (* ":>", "RuleDelayed", 120, Gright, BFsequenceHold, BFholdRest *)
+  (* "/.", "ReplaceAll", 110, Gleft *)
+  (* "//.", "ReplaceRepeated", 110, Gleft *)
+  (* "?", "PatternTest", Gnone, 680 *)
   (* "|", "Alternatives", 160 *)
-  (* ":", "Optional", 140, BFright *)
+  (* ":", "Optional", 140, Gright *)
   (* "/;", "Condition", 130, BFholdRest *)
 
-  (* "/@", "Map", 620, BFright *)
-  (* "@@", "Apply", 620, BFright *)
-  (* "@@@", "ApplyLevel", 620, BFright *)
-  (* uF523, "Implies", 200, BFright *)
+  (* "/@", "Map", 620, Gright *)
+  (* "@@", "Apply", 620, Gright *)
+  (* "@@@", "ApplyLevel", 620, Gright *)
+  (* uF523, "Implies", 200, Gright *)
   (* u29E6, "Equivalent", 205, BForderless *)
-  (* "~~", "StringExpression", 135, BFflat, BFoneIdentity, BFprotected *)
-  (* "<>", "StringJoin", 600, BFflat, BFoneIdentity *)
+  (* "~~", "StringExpression", 135, Gflat, BFoneIdentity, BFprotected *)
+  (* "<>", "StringJoin", 600, Gflat, BFoneIdentity *)
   (* ";;", "Span", 305 *)
   (* ";", "CompoundExpression", 10, BFholdAll, BFreadProtected *)
   (* ">>", "Put", 30 *)
   (* ">>>", "PutAppend", 30, BFprotected *)
-  (* "//", "Postfix", 70, BFleft *)
-  (* "@", "Prefix", 640, BFright *)
+  (* "//", "Postfix", 70, Gleft *)
+  (* "@", "Prefix", 640, Gright *)
   (* "::", "MessageName", 750, BFholdFirst *)
 ]
 
@@ -123,17 +125,6 @@ let binop_table = begin
   (t: (string, someop * ident * precedence) Hashtbl.t)
 end
 
-let option_get = function
-  | Some x -> x
-  | None   -> raise (Invalid_argument "Option.get")
-
-type comparison = Lt | Eq | Gt
-let comp p q =
-  let n = compare p q in
-  if n < 0 then Lt
-  else if n > 0 then Gt
-  else Eq
-
 let op_of_string_opt ts s =
   List.(ts
   |> map (fun t -> Hashtbl.find_opt t s)
@@ -143,7 +134,21 @@ let op_of_string ts s = op_of_string_opt ts s |> option_get
 let preop_of_string = op_of_string [preop_table]
 let postop_of_string = op_of_string [postop_table]
 let binop_of_string = op_of_string [binop_table]
-let someop_of_string = op_of_string [postop_table; preop_table; binop_table]
+let someop_of_string = op_of_string [postop_table; binop_table; preop_table]
+
+let rec dump_vexpr_list oc =
+  Format.fprintf oc "[%a]" (dump_list ~sep:", " ~dump_func:dump_vexpr)
+and dump_vexpr oc = function
+  | EVexpr _ -> Format.fprintf oc "$"
+  | EVop op -> Format.fprintf oc "%a" dump_op op
+  | EVsymbol s -> Format.fprintf oc "%s" s
+and dump_op oc = function
+  | (`preop _, n, _) -> Format.fprintf oc "preop (%s)" n
+  | (`postop _, n, _) -> Format.fprintf oc "postop (%s)" n
+  | (`binop _, n, _) -> Format.fprintf oc "binop (%s)" n
+
+let print_vexpr_list el =
+  Format.eprintf "%a\n" dump_vexpr_list el; el
 
 let parse_expr_virtual_list el =
   let mulop = EVop (op_of_string [binop_table] "*")
@@ -169,19 +174,32 @@ let parse_expr_virtual_list el =
     | (EVop (o, n, (prec, assoc))) as op::xs ->
         begin match (o, comp prec cur_prec, assoc) with
           | (`binop _, Gt, _) -> run cur_prec (op::stack) xs
-          | (`binop _, Eq, BFflat) | (`binop _, Eq, BFleft) ->
-              run prec (op::run_stack prec stack) xs
+          | (`binop _, Eq, Gflat) | (`binop _, Eq, Gleft)
           | (`binop _, Lt, _) -> run prec (op::run_stack prec stack) xs
+          | (`postop _, _, _) -> run prec (run_post n prec stack) xs
+          | (`preop _, _, _) -> run prec (op::stack) xs
           | _ -> assert false
         end
     | [] -> run_stack 1 stack |> List.hd
     | _ -> raise (Parsing_error "extra operator")
   and run_stack new_prec = function (* there should be no postfix operator in stack*)
-    | (EVexpr e)::(EVop (o, n, (prec, assoc)))::xs as stack->
+    | (EVexpr e)::(EVop (o, n, (prec, assoc)))::((EVop _)::_ as xs) as stack ->
         begin match (o, comp prec new_prec) with
           | (_, Lt) -> stack
-          | (`preop _, Gt) -> run_stack new_prec xs
+          | (`preop _, Gt) -> run_stack new_prec (call n [e]::xs)
           | _ -> assert false
         end
-    | _ -> assert false in
-  parse_to_op [] true el |> run 0 [noop] |> (function | EVexpr e -> e | _ -> assert false)
+    | (EVexpr e1)::(EVop (o, n, (prec, assoc)))::(EVexpr e2)::xs as stack ->
+        begin match (o, comp prec new_prec) with
+          | (_, Lt) -> stack
+          | (`binop _, Gt) -> run_stack new_prec (call n [e1;e2]::xs)
+          | _ -> assert false
+        end
+    | (EVexpr _)::(EVop _)::[] as stack -> stack
+    | stack -> raise (Parsing_error (Format.asprintf "stack state error: %a" dump_vexpr_list stack))
+  and run_post n prec stack =
+    match run_stack prec stack with
+      | (EVexpr e)::xs -> call n [e]::xs
+      | _ -> assert false
+  and call n el = EVexpr (Ecall (Esymbol (Cident n), el)) in
+  parse_to_op [] true el (*|> print_vexpr_list*) |> run 0 [noop] |> (function | EVexpr e -> e | _ -> assert false)
