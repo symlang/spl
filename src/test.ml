@@ -2,7 +2,7 @@
 (* Main program *)
 
 open Format
-open Lexing
+open Sedlexing_menhir
 open Parser
 
 let usage = "usage: mini-python [options] file.m"
@@ -24,32 +24,29 @@ let file =
   Arg.parse spec set_file usage;
   match !file with Some f -> f | None -> Arg.usage spec usage; exit 1
 
-let report (b,e) =
-  let l = b.pos_lnum in
-  let fc = b.pos_cnum - b.pos_bol + 1 in
-  let lc = e.pos_cnum - b.pos_bol + 1 in
-  eprintf "File \"%s\", line %d, characters %d-%d:\n" file l fc lc
+let report e =
+  eprintf "%s@." (string_of_ParseError e)
 
 let () =
   let c = open_in file in
-  let lb = Lexing.from_channel c in
+  let lb = create_lexbuf ~file (Sedlexing.Utf8.from_channel c) in
   try
-    let f = Parser.file Lexer.next_token lb in
+    let f = sedlex_with_menhir Lexer.token Parser.file lb in
     close_in c;
     if !parse_only then exit 0;
     Interp.file f
   with
-    | Lexer.Lexing_error s ->
-        report (lexeme_start_p lb, lexeme_end_p lb);
+    | Sedlexing_menhir.ParseError e ->
+        report (position_info lb);
+        eprintf "Parse error@.";
+        exit 1
+    | Lexer.Error s ->
+        report (position_info lb);
         eprintf "lexical error: %s@." s;
         exit 1
-    | Parser.Error ->
-        report (lexeme_start_p lb, lexeme_end_p lb);
-        eprintf "syntax error@.";
-        exit 1
     | Interp.Error s ->
-        eprintf "error: %s@." s;
+        eprintf "Interpret error: %s@." s;
         exit 1
     | e ->
-        eprintf "Anomaly: %s\n@." (Printexc.to_string e);
+        eprintf "Unexpected: %s\n@." (Printexc.to_string e);
         exit 2
