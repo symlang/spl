@@ -1,23 +1,20 @@
 .idea
+.merlin
 
 *.cmi
 *.cmo
-*.byte
-*.native
 *.annot
 *.automaton
-*.mldylib
-*.mllib
+
+*.byte
+*.native
+*.exe
 
 *.timestamp
 
 parser.ml
 lexer.ml
 
-myocamlbuild.ml
-setup.ml
-setup.data
-setup.log
 _build
 bin
 

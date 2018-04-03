@@ -1,0 +1,10 @@
+(jbuild_version 1)
+
+(ocamllex (lexer))
+(menhir
+ ((flags (--explain -v))
+  (modules (parser))))
+
+(executable
+ ((name test)
+  (modules_without_implementation (ast))))

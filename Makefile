@@ -3,22 +3,16 @@ SRC=$(wildcard src/*.mli src/*.ml src/*.mly src/*.mll)
 all: test.nb
 
 build: build.timestamp
-	echo $(SRC)
 
-build.timestamp: $(SRC) setup.ml setup.data
-	ocaml setup.ml -build
+build.timestamp: $(SRC) src/jbuild
+	jbuilder build src/test.exe
+	ln -s _build/default/src/test.exe .
 	touch build.timestamp
 
-setup.data: setup.ml
-	ocaml setup.ml -configure
-
-setup.ml: _oasis
-	oasis setup
-
 test.nb: build.timestamp test.m
-	./test.byte test.m > test.nb
+	./test.exe test.m > test.nb
 
 clean:
-	rm -f build.timestamp setup.data setup.log setup.ml src/*.mldylib src/*.mllib myocamlbuild.ml
+	rm -f build.timestamp test.exe
 
 .PHONY: build all clean
