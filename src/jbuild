@@ -7,5 +7,5 @@
 (executable
  ((name test)
   (modules_without_implementation (ast))
-  (libraries (sedlex sedlex.menhir menhirLib))
+  (libraries (sedlex_menhir))
   (preprocess (pps (sedlex.ppx)))))
