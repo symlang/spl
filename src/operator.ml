@@ -132,7 +132,7 @@ let op_of_string_opt ts s =
   |> map (fun t -> Hashtbl.find_opt t s)
   |> filter ((!=) None)
   |> (function | x::xs -> x | _ -> None))
-let op_of_string ts s = op_of_string_opt ts s |> option_get
+let op_of_string ts s = try op_of_string_opt ts s |> option_get with _ -> raise (Parsing_error "op not found")
 let preop_of_string = op_of_string [preop_table]
 let postop_of_string = op_of_string [postop_table]
 let binop_of_string = op_of_string [binop_table]

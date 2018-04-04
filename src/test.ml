@@ -17,8 +17,8 @@ let spec =
 let file =
   let file = ref None in
   let set_file s =
-    if not (Filename.check_suffix s ".m") then
-      raise (Arg.Bad "no .m extension");
+    if not ((Filename.check_suffix s ".m") || (Filename.check_suffix s ".nb")) then
+      raise (Arg.Bad "no .m or .nb extension");
     file := Some s
   in
   Arg.parse spec set_file usage;
@@ -33,6 +33,7 @@ let () =
   let f =
   try
     let f = sedlex_with_menhir ~file Parser.file Lexer.token lb in
+    report (current_position lb);eprintf "finish@.";
     close_in c;
     if !parse_only then exit 0;
     f
@@ -47,7 +48,7 @@ let () =
         exit 1
     | e ->
         report (current_position lb);
-        eprintf "Unexpected: %s\n@." (Printexc.to_string e);
+        eprintf "Unexpected: %s@." (Printexc.to_string e);
         exit 2
   in try Interp.file f
   with
@@ -55,5 +56,5 @@ let () =
         eprintf "Interpret error: %s@." s;
         exit 1
     | e ->
-        eprintf "Unexpected: %s\n@." (Printexc.to_string e);
+        eprintf "Unexpected: %s@." (Printexc.to_string e);
         exit 2

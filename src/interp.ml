@@ -46,4 +46,4 @@ let file ?(oc=Format.std_formatter) ?(ctx = Ctx.create ()) f = List.(
   f |> map (stmt ~ctx)
     |> deoptionalize
     |> map dump_pass
-    |> Format.fprintf oc "[%a]" (dump_list ~sep:",\n"))
+    |> Format.fprintf oc "{%a};@." (dump_list ~sep:",\n"))
