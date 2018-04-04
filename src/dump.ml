@@ -47,7 +47,7 @@ and dump_expr oc = function
   | Ecall (e, el) -> dump_call oc e el
   | Elist el -> dump_obj oc "List[%a]" dump_expr_list el
   | Eget (e1, e2) -> dump_obj oc "Get[%a]" dump_expr_list [e1; e2]
-  | Eblock l -> dump_obj oc "{{%a}}" dump_expr_list l
+  | Eblock l -> dump_obj oc "{|%a|}" dump_expr_list l
 and dump_const oc = function
   | Cnone -> Format.fprintf oc "Null"
   | Cbool true -> Format.fprintf oc "True"

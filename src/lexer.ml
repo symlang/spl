@@ -14,7 +14,8 @@ let keywords_tbl = begin
   h
 end
 
-let id_or_kwd s = try Hashtbl.find keywords_tbl s with Not_found -> IDENT s
+let id_or_kwd s = match Hashtbl.find_opt keywords_tbl s
+    with | Some s -> s | None -> IDENT s
 
 let string_buffer = Buffer.create 1024
 
@@ -38,22 +39,20 @@ let rec token lexbuf =
   | integer     -> let s = lexeme lexbuf in
       (try CST (Cint (int_of_string s))
       with _ -> raise (Error ("constant too large: " ^ s)))
-  | '('     -> LP
-  | ')'     -> RP
-  | '['     -> LSQ
-  | ']'     -> RSQ
-  | '{'     -> LB
-  | '}'     -> RB
-  | "[["    -> LDSQ
-  | "]]"    -> RDSQ
-  | "{{"    -> LDB
-  | "}}"    -> RDB
-  | ','     -> COMMA
-  | ';'     -> SEMICOLON
-  | ";;"    -> DOUBLESEMICOLON
-  | '"'     -> CST (Cstring (parse_string lexbuf))
-  | eof     -> EOF
-  | _       -> assert false
+  | "{|"        -> BLOCK_BEGIN
+  | "|}"        -> BLOCK_END
+  | '('         -> LP
+  | ')'         -> RP
+  | '['         -> LSQ
+  | ']'         -> RSQ
+  | '{'         -> LB
+  | '}'         -> RB
+  | ','         -> COMMA
+  | ';'         -> SEMICOLON
+  | ";;"        -> DOUBLESEMICOLON
+  | '"'         -> CST (Cstring (parse_string lexbuf))
+  | eof         -> EOF
+  | _           -> assert false
 and parse_string lexbuf =
   let lexeme = Sedlexing.Utf8.lexeme in
   match%sedlex lexbuf with

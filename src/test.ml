@@ -30,11 +30,12 @@ let report e =
 let () =
   let c = open_in file in
   let lb = Sedlexing.Utf8.from_channel c in
+  let f =
   try
     let f = sedlex_with_menhir ~file Parser.file Lexer.token lb in
     close_in c;
     if !parse_only then exit 0;
-    Interp.file f
+    f
   with
     | Sedlexing_menhir.ParseError e ->
         report (current_position lb);
@@ -44,6 +45,12 @@ let () =
         report (current_position lb);
         eprintf "lexical error: %s@." s;
         exit 1
+    | e ->
+        report (current_position lb);
+        eprintf "Unexpected: %s\n@." (Printexc.to_string e);
+        exit 2
+  in try Interp.file f
+  with
     | Interp.Error s ->
         eprintf "Interpret error: %s@." s;
         exit 1
