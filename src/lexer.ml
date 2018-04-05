@@ -1,7 +1,7 @@
 open Ast
 open Parser
+open Lexing
 open Sedlexing
-open Sedlexing_menhir
 
 exception Error of string
 
@@ -17,6 +17,16 @@ end
 let id_or_kwd s = match Hashtbl.find_opt keywords_tbl s
     with | Some s -> s | None -> IDENT s
 
+let report_position oc lb =
+  let col p = p.pos_cnum - p.pos_bol in
+  let (s, e) = Sedlexing.lexing_positions lb in
+  let fname = if e.pos_fname = "" then "<untitled>" else e.pos_fname in
+  Format.fprintf oc "at %s:" fname;
+  if s.pos_lnum = e.pos_lnum then
+    Format.fprintf oc "line %d:%d-%d" s.pos_lnum (col s) (col e)
+  else
+    Format.fprintf oc "line %d:%d-%d:%d" s.pos_lnum (col s) e.pos_lnum (col e)
+
 let string_buffer = Buffer.create 1024
 
 let letter = [%sedlex.regexp? 'a'..'z' | 'A'..'Z']
@@ -28,10 +38,11 @@ let symbols = [%sedlex.regexp? '+' | '-' | '*' | '/' | '%'
   | "==" | "!=" | "<" | "<=" | ">" | ">="
   | '=' | ":=" | "=." | "++" | "--"]
 
+let lexeme = Sedlexing.Utf8.lexeme
+
 let rec token lexbuf =
-  let lexeme = Sedlexing.Utf8.lexeme in
   match%sedlex lexbuf with
-  | '\n'        -> new_line lexbuf; token lexbuf
+  | '\n'        -> token lexbuf
   | Plus (white_space | comment) -> token lexbuf
   | "(*"        -> comment_block lexbuf
   | symbols     -> OPSYM (lexeme lexbuf)
@@ -54,7 +65,6 @@ let rec token lexbuf =
   | eof         -> EOF
   | _           -> assert false
 and parse_string lexbuf =
-  let lexeme = Sedlexing.Utf8.lexeme in
   match%sedlex lexbuf with
   | '"'    -> let s = Buffer.contents string_buffer in
               Buffer.reset string_buffer; s
@@ -65,6 +75,5 @@ and parse_string lexbuf =
 and comment_block lexbuf =
   match%sedlex lexbuf with
   | "*)"        -> token lexbuf
-  | "\n"        -> new_line lexbuf; comment_block lexbuf
   | eof         -> raise (Error "unterminated comment")
   | _           -> comment_block lexbuf

@@ -2,7 +2,6 @@
 (* Main program *)
 
 open Format
-open Sedlexing_menhir
 open Parser
 
 let usage = "usage: mini-python [options] file.m"
@@ -24,31 +23,40 @@ let file =
   Arg.parse spec set_file usage;
   match !file with Some f -> f | None -> Arg.usage spec usage; exit 1
 
-let report e =
-  eprintf "%s@." (string_of_ParseError e)
+let lexbuf_from_channel ?(file="<stdin>") c =
+  let lb = Sedlexing.Utf8.from_channel c in
+  let curr_p = {
+    Lexing.dummy_pos with Lexing.pos_fname = file; pos_cnum = 0;
+  } in
+  let () = Sedlexing.set_curr_p lb curr_p in
+  lb
+
+let manhir_run parser' lexer' lexbuf =
+  let parser = MenhirLib.Convert.Simplified.traditional2revised Parser.file in
+  let lexer = Sedlexing.convert_for_menhir Lexer.token in
+  (* let lexer = (fun lexbuf () ->
+    let x = lexer lexbuf () in
+      Format.eprintf "parse: %a \"%s\"@." Lexer.report_position lexbuf (Lexer.lexeme lexbuf);
+      x) in *)
+  (* let x = *)
+  parser (lexer lexbuf)
+  (* in eprintf "finished %a@." Lexer.report_position lexbuf; x *)
 
 let () =
   let c = open_in file in
-  let lb = Sedlexing.Utf8.from_channel c in
+  let lb = lexbuf_from_channel ~file c in
   let f =
   try
-    let f = sedlex_with_menhir ~file Parser.file Lexer.token lb in
-    report (current_position lb);eprintf "finish@.";
+    let f = manhir_run Parser.file Lexer.token lb in
     close_in c;
     if !parse_only then exit 0;
     f
   with
-    | Sedlexing_menhir.ParseError e ->
-        report (current_position lb);
-        eprintf "Parse error@.";
-        exit 1
     | Lexer.Error s ->
-        report (current_position lb);
-        eprintf "lexical error: %s@." s;
+        eprintf "lexical error: %a %s@." Lexer.report_position lb s;
         exit 1
     | e ->
-        report (current_position lb);
-        eprintf "Unexpected: %s@." (Printexc.to_string e);
+        eprintf "Unexpected: %a %s@."  Lexer.report_position lb (Printexc.to_string e);
         exit 2
   in try Interp.file f
   with

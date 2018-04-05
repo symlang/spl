@@ -5,6 +5,7 @@ all: test.nb
 build: build.timestamp
 
 build.timestamp: $(SRC) src/jbuild
+	jbuilder build src/lexer.sedlex.ml
 	jbuilder build src/test.exe
 	ln -sf _build/default/src/test.exe .
 	touch build.timestamp
