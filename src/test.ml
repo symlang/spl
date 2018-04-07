@@ -25,10 +25,7 @@ let file =
 
 let lexbuf_from_channel ?(file="<stdin>") c =
   let lb = Sedlexing.Utf8.from_channel c in
-  let curr_p = {
-    Lexing.dummy_pos with Lexing.pos_fname = file; pos_cnum = 0;
-  } in
-  let () = Sedlexing.set_curr_p lb curr_p in
+  let () = Sedlexing.set_filename lb file in
   lb
 
 let manhir_run parser' lexer' lexbuf =
